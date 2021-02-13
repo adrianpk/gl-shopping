@@ -63,5 +63,5 @@ func (ots *discountTypeSet) DiscountByName(name string) (DiscountType, error) {
 			return dt, nil
 		}
 	}
-	return DiscountType{}, errors.New("not a valid offer type")
+	return DiscountType{}, errors.New("not a valid discount type")
 }

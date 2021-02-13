@@ -2,7 +2,7 @@ package core
 
 type (
 	Item interface {
-		ID() string
+		ID() interface{}
 		Name() string
 		Price() int64
 	}
