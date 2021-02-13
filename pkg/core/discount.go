@@ -18,8 +18,8 @@ type (
 
 type (
 	QuantityDiscount struct {
-		BuyQty int64
-		PayQty int64
+		BuyQty  int64
+		FreeQty int64
 	}
 
 	PercentageDiscount struct {
