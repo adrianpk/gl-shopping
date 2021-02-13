@@ -1,9 +1,14 @@
-package core_test
+/*
+Package ref includes a non-exhaustive implementation of core interfaces.
+*/
+
+package ref
 
 import (
 	"errors"
 
 	"github.com/adrianpk/gl-shopping/pkg/core"
+	"github.com/google/uuid"
 )
 
 type (
@@ -14,6 +19,8 @@ type (
 	}
 
 	Catalogue struct {
+		id    string
+		name  string
 		items []Item
 	}
 
@@ -25,6 +32,8 @@ type (
 		quantityDiscount        core.QuantityDiscount
 		percentageDiscount      core.PercentageDiscount
 		cheapestFromSetDiscount core.CheapestFromSetDiscount
+		priority                int8
+		cumulative              bool
 	}
 
 	Basket struct {
@@ -36,7 +45,15 @@ type (
 	}
 )
 
-func (i *Item) ID() string {
+func NewItem(name string, price int64) Item {
+	return Item{
+		id:    uuid.NewString(),
+		name:  name,
+		price: price,
+	}
+}
+
+func (i *Item) ID() interface{} {
 	return i.id
 }
 
@@ -46,6 +63,22 @@ func (i *Item) Name() string {
 
 func (i *Item) Price() int64 {
 	return i.price
+}
+
+func NewCatalogue(name string, items []Item) Catalogue {
+	return Catalogue{
+		id:    uuid.NewString(),
+		name:  name,
+		items: items,
+	}
+}
+
+func (c *Catalogue) ID() string {
+	return c.id
+}
+
+func (c *Catalogue) Name() string {
+	return c.name
 }
 
 func (c *Catalogue) SetItems(items []Item) {
