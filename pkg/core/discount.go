@@ -9,44 +9,59 @@ type (
 	}
 
 	discountTypeSet struct {
-		Percentage  *DiscountType
-		BuyNPayM    *DiscountType
-		BuyNFromSet *DiscountType
-		Types       []*DiscountType
+		Percentage      DiscountType
+		Quantity        DiscountType
+		CheapestFromSet DiscountType
+		Types           []DiscountType
+	}
+)
+
+type (
+	QuantityDiscount struct {
+		BuyQty int64
+		PayQty int64
+	}
+
+	PercentageDiscount struct {
+		Percentage float64
+	}
+
+	CheapestFromSetDiscount struct {
+		Items []Item
 	}
 )
 
 var Discounts = newDiscountTypeSet()
 
-var percentage = &DiscountType{
+var percentage = DiscountType{
 	Name:        "percentage",
 	Description: "Percentage discount",
 }
 
-var buyNPayM = &DiscountType{
-	Name:        "buy-n-pay-m",
+var quantity = DiscountType{
+	Name:        "quantity",
 	Description: "Buy N items and pay M",
 }
 
-var buyNFromSet = &DiscountType{
-	Name:        "buy-n-from-set",
+var cheapestFromSet = DiscountType{
+	Name:        "cheapest-from-set",
 	Description: "Buy N items of a set of products and get the cheapest for free",
 }
 
 func newDiscountTypeSet() *discountTypeSet {
 	return &discountTypeSet{
-		Percentage:  percentage,
-		BuyNPayM:    buyNPayM,
-		BuyNFromSet: buyNFromSet,
-		Types:       []*DiscountType{percentage, buyNPayM, buyNFromSet},
+		Percentage:      percentage,
+		Quantity:        quantity,
+		CheapestFromSet: cheapestFromSet,
+		Types:           []DiscountType{percentage, quantity, cheapestFromSet},
 	}
 }
 
-func (ots *discountTypeSet) DiscountByName(name string) (*DiscountType, error) {
+func (ots *discountTypeSet) DiscountByName(name string) (DiscountType, error) {
 	for _, dt := range ots.Types {
 		if dt.Name == name {
 			return dt, nil
 		}
 	}
-	return nil, errors.New("not a valid offer type")
+	return DiscountType{}, errors.New("not a valid offer type")
 }
