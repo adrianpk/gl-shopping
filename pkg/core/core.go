@@ -15,7 +15,7 @@ type (
 
 	Offer interface {
 		ID() interface{}
-		Items() []Item
+		Items() []interface{}
 		DiscountType() DiscountType
 		Description() string
 		SetQuantityDiscount(buyQty, payQty int64)
