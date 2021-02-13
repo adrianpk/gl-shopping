@@ -26,7 +26,7 @@ type (
 
 	Offer struct {
 		id                      string
-		items                   []Item
+		items                   []string
 		discountType            core.DiscountType
 		description             string
 		quantityDiscount        core.QuantityDiscount
@@ -99,11 +99,19 @@ func (c *Catalogue) RemoveItem(id string) error {
 	return errors.New("item not found")
 }
 
+func NewOffer(description string) Offer {
+	return Offer{
+		id:          uuid.NewString(),
+		items:       []string{},
+		description: description,
+	}
+}
+
 func (o *Offer) ID() string {
 	return o.id
 }
 
-func (o *Offer) Items() []Item {
+func (o *Offer) Items() []string {
 	return o.items
 }
 

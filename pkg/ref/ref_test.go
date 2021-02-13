@@ -23,7 +23,13 @@ var (
 )
 
 var (
+	bakedBeansOffer = ref.NewOffer("Backed Beans Qty")
+
+	sardinesBeansOffer = ref.NewOffer("Sardines Percentage")
+)
+
+var (
 	basket1 = ref.NewBasket()
-	
+
 	basket2 = ref.NewBasket()
 )
