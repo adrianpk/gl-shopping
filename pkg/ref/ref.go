@@ -36,12 +36,12 @@ type (
 		cumulative              bool
 	}
 
-	Basket struct {
-		items []Item
-	}
-
 	OfferSet struct {
 		offers []Offer
+	}
+
+	Basket struct {
+		items map[interface{}]int64
 	}
 )
 
@@ -145,7 +145,7 @@ func (o *Offer) SetCheapestFromSetDiscount(items []*Item, minQty int64) {
 	o.discountType = core.Discounts.CheapestFromSet
 }
 
-func (b *Basket) Items() []Item {
+func (b *Basket) Items() map[interface{}]int64 {
 	return b.items
 }
 
@@ -161,4 +161,22 @@ func (os *OfferSet) RemoveOffer(offerID string) error {
 		}
 	}
 	return errors.New("item not found")
+}
+
+func NewBasket() Basket {
+	return Basket{
+		items: map[interface{}]int64{},
+	}
+}
+
+func (b *Basket) AddItem(itemID string, qty int64) {
+	b.items[itemID] = b.items[itemID] + qty
+}
+
+func (b *Basket) RemoveItem(itemID string, qty int64) {
+	b.items[itemID] = b.items[itemID] + qty
+
+	if b.items[itemID] <= 0 {
+		delete(b.items, itemID)
+	}
 }

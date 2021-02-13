@@ -21,3 +21,9 @@ var (
 var (
 	catalogue = ref.NewCatalogue("Default", []ref.Item{backedBeans, sardines, shampooSmall, shampooMedium, shampooLarge})
 )
+
+var (
+	basket1 = ref.NewBasket()
+	
+	basket2 = ref.NewBasket()
+)

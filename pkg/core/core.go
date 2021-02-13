@@ -24,7 +24,7 @@ type (
 	}
 
 	Basket interface {
-		Items() []Item
+		Items() map[interface{}]int64
 	}
 
 	OfferSet interface {
