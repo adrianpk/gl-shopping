@@ -1,5 +1,7 @@
 package core
 
+import "fmt"
+
 type (
 	Item interface {
 		ID() interface{}
@@ -8,9 +10,7 @@ type (
 	}
 
 	Catalogue interface {
-		SetItems(items []Item)
-		AddItem(item []Item)
-		RemoveItem(id interface{}) error
+		Items() []Item
 	}
 
 	Offer interface {
@@ -27,28 +27,29 @@ type (
 		Items() map[interface{}]int64
 	}
 
-	OfferSet interface {
-		AddOffer(offer Offer)
-		RemoveOffer(offerID interface{}) error
-		Offers() []Offer
-	}
-
 	Pricer struct {
-		catalogue *Catalogue
-		offers    *OfferSet
-		basket    *Basket
+		catalogue Catalogue
+		offers    []Offer
+		basket    Basket
 	}
 )
 
-func (p *Pricer) SetCatalogue(c *Catalogue) {
+func NewPricer(c Catalogue, o []Offer) *Pricer {
+	return &Pricer{
+		catalogue: c,
+		offers:    o,
+	}
+}
+
+func (p *Pricer) SetCatalogue(c Catalogue) {
 	p.catalogue = c
 }
 
-func (p *Pricer) SetOffers(os *OfferSet) {
-	p.offers = os
+func (p *Pricer) SetOffers(offers []Offer) {
+	p.offers = offers
 }
 
-func (p *Pricer) SetBasket(b *Basket) {
+func (p *Pricer) SetBasket(b Basket) {
 	p.basket = b
 }
 
@@ -56,6 +57,36 @@ func (p *Pricer) Discount() int64 {
 	return 0
 }
 
+func (p *Pricer) SubTotal() (subtotal int64, err error) {
+
+	for id, qty := range p.basket.Items() {
+
+		catItem, err := p.findItemInCatalogue(id)
+		if err != nil {
+			return subtotal, err
+		}
+
+		subtotal = subtotal + catItem.Price()*qty
+	}
+
+	return subtotal, nil
+}
+
+func (p *Pricer) DiscountTotal() int64 {
+	return 0
+}
+
 func (p *Pricer) Total() int64 {
 	return 0
+}
+
+func (p *Pricer) findItemInCatalogue(itemID interface{}) (item Item, err error) {
+	for _, catItem := range p.catalogue.Items() {
+		if catItem.ID() == itemID {
+			return catItem, nil
+		}
+
+	}
+
+	return nil, fmt.Errorf("item '%s' not found in catalogue", itemID)
 }
