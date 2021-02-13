@@ -1,5 +1,5 @@
 /*
-Package ref includes a non-exhaustive implementation of core interfaces.
+Package ref includes a basic implementation of core interfaces.
 */
 
 package ref
@@ -21,7 +21,7 @@ type (
 	Catalogue struct {
 		id    string
 		name  string
-		items []Item
+		items []core.Item
 	}
 
 	Offer struct {
@@ -45,8 +45,8 @@ type (
 	}
 )
 
-func NewItem(name string, price int64) Item {
-	return Item{
+func NewItem(name string, price int64) *Item {
+	return &Item{
 		id:    uuid.NewString(),
 		name:  name,
 		price: price,
@@ -65,8 +65,8 @@ func (i *Item) Price() int64 {
 	return i.price
 }
 
-func NewCatalogue(name string, items []Item) Catalogue {
-	return Catalogue{
+func NewCatalogue(name string, items []core.Item) *Catalogue {
+	return &Catalogue{
 		id:    uuid.NewString(),
 		name:  name,
 		items: items,
@@ -81,17 +81,17 @@ func (c *Catalogue) Name() string {
 	return c.name
 }
 
-func (c *Catalogue) SetItems(items []Item) {
+func (c *Catalogue) SetItems(items []core.Item) {
 	c.items = items
 }
 
-func (c *Catalogue) AddItem(item Item) {
+func (c *Catalogue) AddItem(item core.Item) {
 	c.items = append(c.items, item)
 }
 
 func (c *Catalogue) RemoveItem(id string) error {
 	for i, item := range c.items {
-		if item.id == id {
+		if item.ID() == id {
 			c.items = append(c.items[:i], c.items[i+1:]...)
 			return nil
 		}
@@ -99,20 +99,29 @@ func (c *Catalogue) RemoveItem(id string) error {
 	return errors.New("item not found")
 }
 
-func NewOffer(description string) Offer {
-	return Offer{
+func (c *Catalogue) Items() []core.Item {
+	return c.items
+}
+
+func NewOffer(description string) *Offer {
+	return &Offer{
 		id:          uuid.NewString(),
 		items:       []string{},
 		description: description,
 	}
 }
 
-func (o *Offer) ID() string {
+func (o *Offer) ID() interface{} {
 	return o.id
 }
 
-func (o *Offer) Items() []string {
-	return o.items
+func (o *Offer) Items() []interface{} {
+	items := make([]interface{}, len(o.items))
+	for i, v := range o.items {
+		items[i] = v
+	}
+
+	return items
 }
 
 func (o *Offer) DiscountType() core.DiscountType {
@@ -123,10 +132,10 @@ func (o *Offer) Description() string {
 	return o.description
 }
 
-func (o *Offer) SetQuantityDiscount(buyQty, payQty int64) {
+func (o *Offer) SetQuantityDiscount(buyQty, freeQty int64) {
 	o.quantityDiscount = core.QuantityDiscount{
-		BuyQty: buyQty,
-		PayQty: payQty,
+		BuyQty:  buyQty,
+		FreeQty: freeQty,
 	}
 
 	o.discountType = core.Discounts.Quantity
@@ -140,7 +149,7 @@ func (o *Offer) SetPercentageDiscount(percentage float64) {
 	o.discountType = core.Discounts.Percentage
 }
 
-func (o *Offer) SetCheapestFromSetDiscount(items []*Item, minQty int64) {
+func (o *Offer) SetCheapestFromSetDiscount(items []core.Item, minQty int64) {
 	var data []core.Item
 	for _, v := range items {
 		data = append(data, v)
@@ -171,17 +180,17 @@ func (os *OfferSet) RemoveOffer(offerID string) error {
 	return errors.New("item not found")
 }
 
-func NewBasket() Basket {
-	return Basket{
+func NewBasket() *Basket {
+	return &Basket{
 		items: map[interface{}]int64{},
 	}
 }
 
-func (b *Basket) AddItem(itemID string, qty int64) {
+func (b *Basket) AddItem(itemID interface{}, qty int64) {
 	b.items[itemID] = b.items[itemID] + qty
 }
 
-func (b *Basket) RemoveItem(itemID string, qty int64) {
+func (b *Basket) RemoveItem(itemID interface{}, qty int64) {
 	b.items[itemID] = b.items[itemID] + qty
 
 	if b.items[itemID] <= 0 {
