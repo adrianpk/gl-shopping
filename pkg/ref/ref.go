@@ -103,16 +103,20 @@ func (c *Catalogue) Items() []core.Item {
 	return c.items
 }
 
-func NewOffer(description string) *Offer {
+func NewOffer(itemID interface{}, description string) *Offer {
 	return &Offer{
 		id:          uuid.NewString(),
-		items:       []interface{}{},
+		items:       []interface{}{itemID},
 		description: description,
 	}
 }
 
 func (o *Offer) ID() interface{} {
 	return o.id
+}
+
+func (o *Offer) AddItem(itemID interface{}) {
+	o.items = append(o.items, itemID)
 }
 
 func (o *Offer) Items() []interface{} {

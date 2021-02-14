@@ -1,6 +1,8 @@
 package core
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type (
 	Item interface {
@@ -82,12 +84,18 @@ func (p *Pricer) Discount() (discount int64, err error) {
 
 		switch dt := offer.DiscountType(); dt {
 		case Discounts.Percentage:
+			// TODO: Implement some helpers to make this inline conversions
 			discount = discount + int64(float64(discount)+float64((item.Price()*qty))*offer.PercentageDiscount())
 
 		case Discounts.Quantity:
-			discount = discount
+			buyN, freeN := offer.QuantityDiscount()
+			applicableFor := qty / buyN
+
+			// TODO: Implement some helpers to make this inline conversions
+			discount = discount + int64(float64(item.Price())*float64(applicableFor*freeN))
 
 		case Discounts.CheapestFromSet:
+			// TODO: implement it
 			discount = discount
 
 		default:
@@ -99,8 +107,18 @@ func (p *Pricer) Discount() (discount int64, err error) {
 	return discount, nil
 }
 
-func (p *Pricer) Total() int64 {
-	return 0
+func (p *Pricer) Total() (total int64, err error) {
+	subtotal, err := p.SubTotal()
+	if err != nil {
+		return total, err
+	}
+
+	discount, err := p.Discount()
+	if err != nil {
+		return total, err
+	}
+
+	return subtotal - discount, err
 }
 
 func (p *Pricer) findItemInCatalogue(itemID interface{}) (item Item, ok error) {
