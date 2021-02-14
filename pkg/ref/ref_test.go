@@ -11,7 +11,7 @@ import (
 var (
 	bakedBeans    = ref.NewItem("BakedBeans", 990)
 	biscuits      = ref.NewItem("Biscuits", 1200)
-	sardines      = ref.NewItem("Sardines", 189)
+	sardines      = ref.NewItem("Sardines", 1890)
 	shampooSmall  = ref.NewItem("Shampoo Small", 2000)
 	shampooMedium = ref.NewItem("Shampoo Medium", 2500)
 	shampooLarge  = ref.NewItem("Shampoo Large", 3500)
@@ -22,8 +22,8 @@ var (
 )
 
 var (
-	bakedBeansOffer = ref.NewOffer("Backed Beans Qty")
-	sardinesOffer   = ref.NewOffer("Sardines Percentage")
+	bakedBeansOffer = ref.NewOffer(bakedBeans.ID(), "Backed Beans Qty")
+	sardinesOffer   = ref.NewOffer(sardines.ID(), "Sardines Percentage")
 	offers          = []core.Offer{bakedBeansOffer, sardinesOffer}
 )
 
@@ -40,7 +40,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func TestBasicPercentageDiscount(t *testing.T) {
+func TestDiscountBasic(t *testing.T) {
 	// Setup offers
 	bakedBeansOffer.SetQuantityDiscount(2, 1)
 	sardinesOffer.SetPercentageDiscount(25.0)
@@ -57,7 +57,6 @@ func TestBasicPercentageDiscount(t *testing.T) {
 	st, err := pricer.SubTotal()
 	if err != nil {
 		t.Errorf("cannot calculate subtotal (%e)", err)
-
 	}
 
 	if st != 5160 {
@@ -70,8 +69,18 @@ func TestBasicPercentageDiscount(t *testing.T) {
 
 	}
 
-	if d != 990 {
-		t.Errorf("discount should be 990 (%d)", d)
+	if d != 1980 {
+		t.Errorf("discount should be 1980 (%d)", d)
+	}
+
+	total, err := pricer.Total()
+	if err != nil {
+		t.Errorf("cannot calculate total (%e)", err)
+
+	}
+
+	if total != 3180 {
+		t.Errorf("total should should be 3180 (%d)", d)
 	}
 }
 
