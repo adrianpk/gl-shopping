@@ -18,7 +18,7 @@ var (
 )
 
 var (
-	catalogue = ref.NewCatalogue("Default", []core.Item{bakedBeans, sardines, shampooSmall, shampooMedium, shampooLarge})
+	catalogue = ref.NewCatalogue("Default", []core.Item{bakedBeans, biscuits, sardines, shampooSmall, shampooMedium, shampooLarge})
 )
 
 var (
