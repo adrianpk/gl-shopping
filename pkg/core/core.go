@@ -18,9 +18,9 @@ type (
 		Items() []interface{}
 		DiscountType() DiscountType
 		Description() string
-		SetQuantityDiscount(buyQty, payQty int64)
-		SetPercentageDiscount(percentage float64)
-		SetCheapestFromSetDiscount(items []Item, minQty int64)
+		QuantityDiscount() (buyQty, payQty int64)
+		PercentageDiscount() (percentage float64)
+		CheapestFromSetDiscount() (itemIDs []Item)
 	}
 
 	Basket interface {
@@ -53,15 +53,10 @@ func (p *Pricer) SetBasket(b Basket) {
 	p.basket = b
 }
 
-func (p *Pricer) Discount() int64 {
-	return 0
-}
-
 func (p *Pricer) SubTotal() (subtotal int64, err error) {
+	for itemID, qty := range p.basket.Items() {
 
-	for id, qty := range p.basket.Items() {
-
-		catItem, err := p.findItemInCatalogue(id)
+		catItem, err := p.findItemInCatalogue(itemID)
 		if err != nil {
 			return subtotal, err
 		}
@@ -72,15 +67,43 @@ func (p *Pricer) SubTotal() (subtotal int64, err error) {
 	return subtotal, nil
 }
 
-func (p *Pricer) DiscountTotal() int64 {
-	return 0
+func (p *Pricer) Discount() (discount int64, err error) {
+	for itemID, qty := range p.basket.Items() {
+
+		item, err := p.findItemInCatalogue(itemID)
+		if err != nil {
+			return discount, err
+		}
+
+		offer, ok := p.findOffer(itemID)
+		if !ok {
+			continue
+		}
+
+		switch dt := offer.DiscountType(); dt {
+		case Discounts.Percentage:
+			discount = discount + int64(float64(discount)+float64((item.Price()*qty))*offer.PercentageDiscount())
+
+		case Discounts.Quantity:
+			discount = discount
+
+		case Discounts.CheapestFromSet:
+			discount = discount
+
+		default:
+			// Do nothing for now
+			discount = discount
+		}
+	}
+
+	return discount, nil
 }
 
 func (p *Pricer) Total() int64 {
 	return 0
 }
 
-func (p *Pricer) findItemInCatalogue(itemID interface{}) (item Item, err error) {
+func (p *Pricer) findItemInCatalogue(itemID interface{}) (item Item, ok error) {
 	for _, catItem := range p.catalogue.Items() {
 		if catItem.ID() == itemID {
 			return catItem, nil
@@ -89,4 +112,24 @@ func (p *Pricer) findItemInCatalogue(itemID interface{}) (item Item, err error) 
 	}
 
 	return nil, fmt.Errorf("item '%s' not found in catalogue", itemID)
+}
+
+func (p *Pricer) findOffer(itemID interface{}) (offer Offer, ok bool) {
+	for _, offer := range p.offers {
+		if findItem(itemID, offer.Items()) {
+			return offer, true
+		}
+	}
+
+	return nil, false
+}
+
+func findItem(itemID interface{}, items []interface{}) (ok bool) {
+	for _, i := range items {
+		if i == itemID {
+			return true
+		}
+	}
+
+	return false
 }
