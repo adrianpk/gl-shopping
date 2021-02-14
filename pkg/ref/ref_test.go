@@ -63,6 +63,16 @@ func TestBasicPercentageDiscount(t *testing.T) {
 	if st != 5160 {
 		t.Errorf("subtotal should be 5160 (%d)", st)
 	}
+
+	d, err := pricer.Discount()
+	if err != nil {
+		t.Errorf("cannot calculate discount (%e)", err)
+
+	}
+
+	if d != 990 {
+		t.Errorf("discount should be 990 (%d)", d)
+	}
 }
 
 func setup() {
