@@ -26,7 +26,7 @@ type (
 
 	Offer struct {
 		id                      string
-		items                   []string
+		items                   []interface{}
 		discountType            core.DiscountType
 		description             string
 		quantityDiscount        core.QuantityDiscount
@@ -106,7 +106,7 @@ func (c *Catalogue) Items() []core.Item {
 func NewOffer(description string) *Offer {
 	return &Offer{
 		id:          uuid.NewString(),
-		items:       []string{},
+		items:       []interface{}{},
 		description: description,
 	}
 }
@@ -130,6 +130,30 @@ func (o *Offer) DiscountType() core.DiscountType {
 
 func (o *Offer) Description() string {
 	return o.description
+}
+
+func (o *Offer) QuantityDiscount() (buyQty, freeQty int64) {
+	if o.discountType != core.Discounts.Quantity {
+		return 0, 0
+	}
+
+	return o.quantityDiscount.BuyQty, o.quantityDiscount.FreeQty
+}
+
+func (o *Offer) PercentageDiscount() (percentage float64) {
+	if o.discountType != core.Discounts.Percentage {
+		return 0.0
+	}
+
+	return o.percentageDiscount.Percentage
+}
+
+func (o *Offer) CheapestFromSetDiscount() (items []core.Item) {
+	if o.discountType != core.Discounts.CheapestFromSet {
+		return []core.Item{}
+	}
+
+	return o.cheapestFromSetDiscount.Items
 }
 
 func (o *Offer) SetQuantityDiscount(buyQty, freeQty int64) {
