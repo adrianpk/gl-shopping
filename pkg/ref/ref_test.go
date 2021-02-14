@@ -53,7 +53,16 @@ func TestBasicPercentageDiscount(t *testing.T) {
 	pricer := core.NewPricer(catalogue, offers)
 	pricer.SetBasket(basket1)
 
-	t.Log(pricer.SubTotal())
+	// Verify
+	st, err := pricer.SubTotal()
+	if err != nil {
+		t.Errorf("cannot calculate subtotal (%e)", err)
+
+	}
+
+	if st != 5160 {
+		t.Errorf("subtotal should be 5160 (%d)", st)
+	}
 }
 
 func setup() {
