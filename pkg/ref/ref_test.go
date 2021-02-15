@@ -1,6 +1,7 @@
 package ref_test
 
 import (
+	"math"
 	"os"
 	"testing"
 
@@ -8,13 +9,17 @@ import (
 	"github.com/adrianpk/gl-shopping/pkg/ref"
 )
 
+const (
+	eqThreshold = 0.1
+)
+
 var (
-	bakedBeans    = ref.NewItem("BakedBeans", 990)
-	biscuits      = ref.NewItem("Biscuits", 1200)
-	sardines      = ref.NewItem("Sardines", 1890)
-	shampooSmall  = ref.NewItem("Shampoo Small", 2000)
-	shampooMedium = ref.NewItem("Shampoo Medium", 2500)
-	shampooLarge  = ref.NewItem("Shampoo Large", 3500)
+	bakedBeans    = ref.NewItem("BakedBeans", 0.99)
+	biscuits      = ref.NewItem("Biscuits", 1.2)
+	sardines      = ref.NewItem("Sardines", 1.89)
+	shampooSmall  = ref.NewItem("Shampoo Small", 2.0)
+	shampooMedium = ref.NewItem("Shampoo Medium", 2.5)
+	shampooLarge  = ref.NewItem("Shampoo Large", 3.5)
 )
 
 var (
@@ -59,8 +64,8 @@ func TestDiscountBasic(t *testing.T) {
 		t.Errorf("cannot calculate subtotal (%e)", err)
 	}
 
-	if st != 5160 {
-		t.Errorf("subtotal should be 5160 (%d)", st)
+	if !eq(st, 5.16) {
+		t.Errorf("subtotal should be 5.16 (%.2f)", st)
 	}
 
 	d, err := pricer.Discount()
@@ -69,8 +74,8 @@ func TestDiscountBasic(t *testing.T) {
 
 	}
 
-	if d != 1980 {
-		t.Errorf("discount should be 1980 (%d)", d)
+	if !eq(d, 1.98) {
+		t.Errorf("discount should be 1.98 (%.2f)", d)
 	}
 
 	total, err := pricer.Total()
@@ -79,10 +84,60 @@ func TestDiscountBasic(t *testing.T) {
 
 	}
 
-	if total != 3180 {
-		t.Errorf("total should should be 3180 (%d)", d)
+	if !eq(total, 3.18) {
+		t.Errorf("total should should be 3.18 (%.2f)", d)
+	}
+}
+
+func TestDiscountBasic2(t *testing.T) {
+	// Setup offers
+	bakedBeansOffer.SetQuantityDiscount(2, 1)
+	sardinesOffer.SetPercentageDiscount(25.0)
+
+	// Setup basket
+	basket2.AddItem(bakedBeans.ID(), 2)
+	basket2.AddItem(biscuits.ID(), 1)
+	basket2.AddItem(sardines.ID(), 2)
+
+	// Setup pricer
+	pricer := core.NewPricer(catalogue, offers)
+	pricer.SetBasket(basket2)
+
+	// Verify
+	st, err := pricer.SubTotal()
+	if err != nil {
+		t.Errorf("cannot calculate subtotal (%e)", err)
+	}
+
+	if !eq(st, 6.96) {
+		t.Errorf("subtotal should be 6.96 (%.2f)", st)
+	}
+
+	d, err := pricer.Discount()
+	if err != nil {
+		t.Errorf("cannot calculate discount (%e)", err)
+
+	}
+
+	if !eq(d, 1.94) {
+		t.Errorf("discount should be 1.94 (%.2f)", d)
+	}
+
+	total, err := pricer.Total()
+	if err != nil {
+		t.Errorf("cannot calculate total (%e)", err)
+
+	}
+
+	if !eq(total, 5.02) {
+		t.Errorf("total should should be 5.02 (%.2f)", d)
 	}
 }
 
 func setup() {
+}
+
+// Helpers
+func eq(a, b float64) bool {
+	return math.Abs(a-b) <= eqThreshold
 }

@@ -8,7 +8,7 @@ type (
 	Item interface {
 		ID() interface{}
 		Name() string
-		Price() int64
+		Price() float64
 	}
 
 	Catalogue interface {
@@ -22,7 +22,7 @@ type (
 		Description() string
 		QuantityDiscount() (buyQty, payQty int64)
 		PercentageDiscount() (percentage float64)
-		CheapestFromSetDiscount() (itemIDs []Item)
+		CheapestFromSetDiscount() (itemIDs []Item, buyQty int64)
 	}
 
 	Basket interface {
@@ -55,7 +55,7 @@ func (p *Pricer) SetBasket(b Basket) {
 	p.basket = b
 }
 
-func (p *Pricer) SubTotal() (subtotal int64, err error) {
+func (p *Pricer) SubTotal() (subtotal float64, err error) {
 	for itemID, qty := range p.basket.Items() {
 
 		catItem, err := p.findItemInCatalogue(itemID)
@@ -63,13 +63,13 @@ func (p *Pricer) SubTotal() (subtotal int64, err error) {
 			return subtotal, err
 		}
 
-		subtotal = subtotal + catItem.Price()*qty
+		subtotal = subtotal + catItem.Price()*float64(qty)
 	}
 
 	return subtotal, nil
 }
 
-func (p *Pricer) Discount() (discount int64, err error) {
+func (p *Pricer) Discount() (discount float64, err error) {
 	for itemID, qty := range p.basket.Items() {
 
 		item, err := p.findItemInCatalogue(itemID)
@@ -84,15 +84,13 @@ func (p *Pricer) Discount() (discount int64, err error) {
 
 		switch dt := offer.DiscountType(); dt {
 		case Discounts.Percentage:
-			// TODO: Implement some helpers to make this inline conversions
-			discount = discount + int64(float64(discount)+float64((item.Price()*qty))*offer.PercentageDiscount())
+			discount = discount + item.Price()*float64(qty)*offer.PercentageDiscount()/100
 
 		case Discounts.Quantity:
 			buyN, freeN := offer.QuantityDiscount()
 			applicableFor := qty / buyN
 
-			// TODO: Implement some helpers to make this inline conversions
-			discount = discount + int64(float64(item.Price())*float64(applicableFor*freeN))
+			discount = discount + item.Price()*float64(applicableFor*freeN)
 
 		case Discounts.CheapestFromSet:
 			// TODO: implement it
@@ -107,7 +105,7 @@ func (p *Pricer) Discount() (discount int64, err error) {
 	return discount, nil
 }
 
-func (p *Pricer) Total() (total int64, err error) {
+func (p *Pricer) Total() (total float64, err error) {
 	subtotal, err := p.SubTotal()
 	if err != nil {
 		return total, err
