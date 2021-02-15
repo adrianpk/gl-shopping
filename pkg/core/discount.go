@@ -27,8 +27,7 @@ type (
 	}
 
 	CheapestFromSetDiscount struct {
-		Items  []Item
-		BuyQty int64
+		RequiredQty int64
 	}
 )
 

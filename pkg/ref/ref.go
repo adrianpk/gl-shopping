@@ -148,12 +148,12 @@ func (o *Offer) PercentageDiscount() (percentage float64) {
 	return o.percentageDiscount.Percentage
 }
 
-func (o *Offer) CheapestFromSetDiscount() (items []core.Item, buyQty int64) {
+func (o *Offer) CheapestFromSetDiscount() (requiredQty int64) {
 	if o.discountType != core.Discounts.CheapestFromSet {
-		return []core.Item{}, 0
+		return 0
 	}
 
-	return o.cheapestFromSetDiscount.Items, o.cheapestFromSetDiscount.BuyQty
+	return o.cheapestFromSetDiscount.RequiredQty
 }
 
 func (o *Offer) SetQuantityDiscount(buyQty, freeQty int64) {
@@ -173,15 +173,9 @@ func (o *Offer) SetPercentageDiscount(percentage float64) {
 	o.discountType = core.Discounts.Percentage
 }
 
-func (o *Offer) SetCheapestFromSetDiscount(items []core.Item, buyQty int64) {
-	var data []core.Item
-	for _, v := range items {
-		data = append(data, v)
-	}
-
+func (o *Offer) SetCheapestFromSetDiscount(RequiredQty int64) {
 	o.cheapestFromSetDiscount = core.CheapestFromSetDiscount{
-		Items:  data,
-		BuyQty: buyQty,
+		RequiredQty: RequiredQty,
 	}
 
 	o.discountType = core.Discounts.CheapestFromSet

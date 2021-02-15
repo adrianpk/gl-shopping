@@ -2,6 +2,7 @@ package core
 
 import (
 	"fmt"
+	"sort"
 )
 
 type (
@@ -22,7 +23,7 @@ type (
 		Description() string
 		QuantityDiscount() (buyQty, payQty int64)
 		PercentageDiscount() (percentage float64)
-		CheapestFromSetDiscount() (itemIDs []Item, buyQty int64)
+		CheapestFromSetDiscount() (requiredQty int64)
 	}
 
 	Basket interface {
@@ -33,6 +34,31 @@ type (
 		catalogue Catalogue
 		offers    []Offer
 		basket    Basket
+		subtotal  float64
+		discount  float64
+		total     float64
+		singles   []*singleItemDiscountUnit
+		multis    []*multiItemsDiscountUnit
+	}
+)
+
+type (
+	singleItemDiscountUnit struct {
+		item     Item
+		qty      int64
+		offer    Offer
+		discount float64
+	}
+
+	multiItemsDiscountUnit struct {
+		items    []itemQty
+		offer    Offer
+		discount float64
+	}
+
+	itemQty struct {
+		item Item
+		qty  int64
 	}
 )
 
@@ -55,96 +81,222 @@ func (p *Pricer) SetBasket(b Basket) {
 	p.basket = b
 }
 
-func (p *Pricer) SubTotal() (subtotal float64, err error) {
-	for itemID, qty := range p.basket.Items() {
-
-		catItem, err := p.findItemInCatalogue(itemID)
-		if err != nil {
-			return subtotal, err
-		}
-
-		subtotal = subtotal + catItem.Price()*float64(qty)
+func (p *Pricer) Result() (subtotal, discount, total float64, err error) {
+	err = p.calcSubtotal()
+	if err != nil {
+		return subtotal, discount, total, err
 	}
 
-	return subtotal, nil
+	err = p.calcDiscount()
+	if err != nil {
+		return subtotal, discount, total, err
+	}
+
+	p.calcTotal()
+
+	return p.subtotal, p.discount, p.total, nil
 }
 
-func (p *Pricer) Discount() (discount float64, err error) {
+func (p *Pricer) calcSubtotal() (err error) {
+	p.subtotal = 0.0
+
 	for itemID, qty := range p.basket.Items() {
 
-		item, err := p.findItemInCatalogue(itemID)
-		if err != nil {
-			return discount, err
+		catItem, ok := p.findItemInCatalogue(itemID)
+		if !ok {
+			return fmt.Errorf("item '%s' not found in catalogue", itemID)
 		}
 
-		offer, ok := p.findOffer(itemID)
+		p.subtotal = p.subtotal + catItem.Price()*float64(qty)
+	}
+
+	return nil
+}
+
+func (p *Pricer) calcDiscount() (err error) {
+	err = p.collectOffers()
+	if err != nil {
+		return err
+	}
+
+	err = p.processOffers()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Pricer) collectOffers() error {
+	p.singles = []*singleItemDiscountUnit{}
+	p.multis = []*multiItemsDiscountUnit{}
+
+	for itemID, qty := range p.basket.Items() {
+
+		item, ok := p.findItemInCatalogue(itemID)
 		if !ok {
 			continue
 		}
 
-		switch dt := offer.DiscountType(); dt {
+		for _, offer := range p.offers {
+			if p.isItemIncludedInOffer(itemID, offer) {
+
+				switch dt := offer.DiscountType(); dt {
+
+				case Discounts.Percentage:
+					stu := &singleItemDiscountUnit{
+						item:     item,
+						qty:      qty,
+						offer:    offer,
+						discount: 0.0,
+					}
+
+					p.singles = append(p.singles, stu)
+
+				case Discounts.Quantity:
+					stu := &singleItemDiscountUnit{
+						item:     item,
+						qty:      qty,
+						offer:    offer,
+						discount: 0.0,
+					}
+
+					p.singles = append(p.singles, stu)
+
+				case Discounts.CheapestFromSet:
+
+					existent := false
+					for _, m := range p.multis {
+						if m.offer.ID() == offer.ID() {
+							m.items = append(m.items, itemQty{item, qty})
+							existent = true
+						}
+					}
+
+					if existent {
+						continue
+					}
+
+					mtu := &multiItemsDiscountUnit{
+						items:    []itemQty{},
+						offer:    offer,
+						discount: 0.0,
+					}
+
+					mtu.items = append(mtu.items, itemQty{item, qty})
+					p.multis = append(p.multis, mtu)
+
+				default:
+					// Do nothing
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (p *Pricer) processOffers() (err error) {
+	err = p.processSingleItemDiscounts()
+	if err != nil {
+		return err
+	}
+
+	err = p.processMultipleItemsDiscounts()
+	if err != nil {
+		return err
+	}
+
+	err = p.accumulateDiscounts()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *Pricer) processSingleItemDiscounts() (err error) {
+	for _, stu := range p.singles {
+
+		switch dt := stu.offer.DiscountType(); dt {
 		case Discounts.Percentage:
-			discount = discount + item.Price()*float64(qty)*offer.PercentageDiscount()/100
+			stu.discount = stu.item.Price() * float64(stu.qty) * stu.offer.PercentageDiscount() / 100
 
 		case Discounts.Quantity:
-			buyN, freeN := offer.QuantityDiscount()
-			applicableFor := qty / buyN
+			buyN, freeN := stu.offer.QuantityDiscount()
+			applicableFor := stu.qty / buyN
 
-			discount = discount + item.Price()*float64(applicableFor*freeN)
-
-		case Discounts.CheapestFromSet:
-			// TODO: implement it
-			discount = discount
+			stu.discount = stu.item.Price() * float64(applicableFor*freeN)
 
 		default:
 			// Do nothing for now
-			discount = discount
 		}
+
 	}
 
-	return discount, nil
+	return nil
 }
 
-func (p *Pricer) Total() (total float64, err error) {
-	subtotal, err := p.SubTotal()
-	if err != nil {
-		return total, err
+func (p *Pricer) processMultipleItemsDiscounts() (err error) {
+	for _, mtu := range p.multis {
+
+		switch dt := mtu.offer.DiscountType(); dt {
+		case Discounts.CheapestFromSet:
+			requiredQty := int(mtu.offer.CheapestFromSetDiscount())
+
+			sort.Slice(mtu.items, func(i, j int) bool {
+				return mtu.items[i].item.Price() > mtu.items[j].item.Price()
+			})
+
+			items := []Item{}
+			for _, item := range mtu.items {
+				for i := 0; i < int(item.qty); i++ {
+					items = append(items, item.item)
+				}
+			}
+
+			for i := requiredQty - 1; i < len(items); i = i + requiredQty {
+				mtu.discount = mtu.discount + items[i].Price()
+			}
+
+		default:
+			// Do nothing for now
+		}
+
 	}
 
-	discount, err := p.Discount()
-	if err != nil {
-		return total, err
-	}
-
-	return subtotal - discount, err
+	return nil
 }
 
-func (p *Pricer) findItemInCatalogue(itemID interface{}) (item Item, ok error) {
+func (p *Pricer) accumulateDiscounts() (err error) {
+	p.discount = 0.0
+
+	for _, stu := range p.singles {
+		p.discount = p.discount + stu.discount
+	}
+
+	return nil
+}
+
+func (p *Pricer) calcTotal() {
+	p.total = p.subtotal - p.discount
+}
+
+func (p *Pricer) findItemInCatalogue(itemID interface{}) (item Item, ok bool) {
 	for _, catItem := range p.catalogue.Items() {
 		if catItem.ID() == itemID {
-			return catItem, nil
-		}
-
-	}
-
-	return nil, fmt.Errorf("item '%s' not found in catalogue", itemID)
-}
-
-func (p *Pricer) findOffer(itemID interface{}) (offer Offer, ok bool) {
-	for _, offer := range p.offers {
-		if findItem(itemID, offer.Items()) {
-			return offer, true
+			return catItem, true
 		}
 	}
 
 	return nil, false
 }
 
-func findItem(itemID interface{}, items []interface{}) (ok bool) {
-	for _, i := range items {
-		if i == itemID {
+func (p *Pricer) isItemIncludedInOffer(itemID interface{}, offer Offer) (ok bool) {
+	for _, offerItem := range offer.Items() {
+		if offerItem == itemID {
 			return true
 		}
+
 	}
 
 	return false
