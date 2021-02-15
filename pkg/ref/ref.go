@@ -15,7 +15,7 @@ type (
 	Item struct {
 		id    string
 		name  string
-		price int64
+		price float64
 	}
 
 	Catalogue struct {
@@ -36,16 +36,12 @@ type (
 		cumulative              bool
 	}
 
-	OfferSet struct {
-		offers []Offer
-	}
-
 	Basket struct {
 		items map[interface{}]int64
 	}
 )
 
-func NewItem(name string, price int64) *Item {
+func NewItem(name string, price float64) *Item {
 	return &Item{
 		id:    uuid.NewString(),
 		name:  name,
@@ -61,7 +57,7 @@ func (i *Item) Name() string {
 	return i.name
 }
 
-func (i *Item) Price() int64 {
+func (i *Item) Price() float64 {
 	return i.price
 }
 
@@ -152,12 +148,12 @@ func (o *Offer) PercentageDiscount() (percentage float64) {
 	return o.percentageDiscount.Percentage
 }
 
-func (o *Offer) CheapestFromSetDiscount() (items []core.Item) {
+func (o *Offer) CheapestFromSetDiscount() (items []core.Item, buyQty int64) {
 	if o.discountType != core.Discounts.CheapestFromSet {
-		return []core.Item{}
+		return []core.Item{}, 0
 	}
 
-	return o.cheapestFromSetDiscount.Items
+	return o.cheapestFromSetDiscount.Items, o.cheapestFromSetDiscount.BuyQty
 }
 
 func (o *Offer) SetQuantityDiscount(buyQty, freeQty int64) {
@@ -177,14 +173,15 @@ func (o *Offer) SetPercentageDiscount(percentage float64) {
 	o.discountType = core.Discounts.Percentage
 }
 
-func (o *Offer) SetCheapestFromSetDiscount(items []core.Item, minQty int64) {
+func (o *Offer) SetCheapestFromSetDiscount(items []core.Item, buyQty int64) {
 	var data []core.Item
 	for _, v := range items {
 		data = append(data, v)
 	}
 
 	o.cheapestFromSetDiscount = core.CheapestFromSetDiscount{
-		Items: data,
+		Items:  data,
+		BuyQty: buyQty,
 	}
 
 	o.discountType = core.Discounts.CheapestFromSet
@@ -192,20 +189,6 @@ func (o *Offer) SetCheapestFromSetDiscount(items []core.Item, minQty int64) {
 
 func (b *Basket) Items() map[interface{}]int64 {
 	return b.items
-}
-
-func (os *OfferSet) AddOffer(offer Offer) {
-	os.offers = append(os.offers, offer)
-}
-
-func (os *OfferSet) RemoveOffer(offerID string) error {
-	for i, offer := range os.offers {
-		if offer.ID() == offerID {
-			os.offers = append(os.offers[:i], os.offers[i+1:]...)
-			return nil
-		}
-	}
-	return errors.New("item not found")
 }
 
 func NewBasket() *Basket {
