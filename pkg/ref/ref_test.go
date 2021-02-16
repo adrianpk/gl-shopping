@@ -133,16 +133,16 @@ func TestCheapestFromSetDiscount(t *testing.T) {
 		t.Errorf("cannot calculate result (%e)", err)
 	}
 
-	if !eq(subtotal, 6.96) {
-		t.Errorf("subtotal should be 6.96 (%.2f)", subtotal)
+	if !eq(subtotal, 17.0) {
+		t.Errorf("subtotal should be 17.0 (%.2f)", subtotal)
 	}
 
-	if !eq(discount, 1.94) {
-		t.Errorf("discount should be 1.94 (%.2f)", discount)
+	if !eq(discount, 5.5) {
+		t.Errorf("discount should be 5.5 (%.2f)", discount)
 	}
 
-	if !eq(total, 5.02) {
-		t.Errorf("total should should be 5.02 (%.2f)", total)
+	if !eq(total, 11.5) {
+		t.Errorf("total should should be 11.5 (%.2f)", total)
 	}
 }
 

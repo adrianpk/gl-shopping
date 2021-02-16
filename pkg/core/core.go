@@ -127,6 +127,7 @@ func (p *Pricer) calcDiscount() (err error) {
 	return nil
 }
 
+// TODO: Decompose this logic into smaller functions
 func (p *Pricer) collectOffers() error {
 	p.singles = []*singleItemDiscountUnit{}
 	p.multis = []*multiItemsDiscountUnit{}
@@ -272,6 +273,10 @@ func (p *Pricer) accumulateDiscounts() (err error) {
 
 	for _, stu := range p.singles {
 		p.discount = p.discount + stu.discount
+	}
+
+	for _, mtu := range p.multis {
+		p.discount = p.discount + mtu.discount
 	}
 
 	return nil
