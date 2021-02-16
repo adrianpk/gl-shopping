@@ -29,18 +29,17 @@ var (
 var (
 	bakedBeansOffer = ref.NewOffer(bakedBeans.ID(), "Backed Beans Qty")
 	sardinesOffer   = ref.NewOffer(sardines.ID(), "Sardines Percentage")
+	shampoosOffer   = ref.NewOffer(shampooLarge.ID(), "Shampoos Cheapest From Set")
 	offers          = []core.Offer{bakedBeansOffer, sardinesOffer}
 )
 
 var (
 	basket1 = ref.NewBasket()
 	basket2 = ref.NewBasket()
+	basket3 = ref.NewBasket()
 )
 
-var ()
-
 func TestMain(m *testing.M) {
-	setup()
 	code := m.Run()
 	os.Exit(code)
 }
@@ -59,33 +58,21 @@ func TestDiscountBasic(t *testing.T) {
 	pricer.SetBasket(basket1)
 
 	// Verify
-	st, err := pricer.SubTotal()
+	subtotal, discount, total, err := pricer.Result()
 	if err != nil {
-		t.Errorf("cannot calculate subtotal (%e)", err)
+		t.Errorf("cannot calculate result (%e)", err)
 	}
 
-	if !eq(st, 5.16) {
-		t.Errorf("subtotal should be 5.16 (%.2f)", st)
+	if !eq(subtotal, 5.16) {
+		t.Errorf("subtotal should be 5.16 (%.2f)", subtotal)
 	}
 
-	d, err := pricer.Discount()
-	if err != nil {
-		t.Errorf("cannot calculate discount (%e)", err)
-
-	}
-
-	if !eq(d, 1.98) {
-		t.Errorf("discount should be 1.98 (%.2f)", d)
-	}
-
-	total, err := pricer.Total()
-	if err != nil {
-		t.Errorf("cannot calculate total (%e)", err)
-
+	if !eq(discount, 1.98) {
+		t.Errorf("discount should be 1.98 (%.2f)", discount)
 	}
 
 	if !eq(total, 3.18) {
-		t.Errorf("total should should be 3.18 (%.2f)", d)
+		t.Errorf("total should should be 3.18 (%.2f)", total)
 	}
 }
 
@@ -104,37 +91,59 @@ func TestDiscountBasic2(t *testing.T) {
 	pricer.SetBasket(basket2)
 
 	// Verify
-	st, err := pricer.SubTotal()
+	subtotal, discount, total, err := pricer.Result()
 	if err != nil {
-		t.Errorf("cannot calculate subtotal (%e)", err)
+		t.Errorf("cannot calculate result (%e)", err)
 	}
 
-	if !eq(st, 6.96) {
-		t.Errorf("subtotal should be 6.96 (%.2f)", st)
+	if !eq(subtotal, 6.96) {
+		t.Errorf("subtotal should be 6.96 (%.2f)", subtotal)
 	}
 
-	d, err := pricer.Discount()
-	if err != nil {
-		t.Errorf("cannot calculate discount (%e)", err)
-
-	}
-
-	if !eq(d, 1.94) {
-		t.Errorf("discount should be 1.94 (%.2f)", d)
-	}
-
-	total, err := pricer.Total()
-	if err != nil {
-		t.Errorf("cannot calculate total (%e)", err)
-
+	if !eq(discount, 1.94) {
+		t.Errorf("discount should be 1.94 (%.2f)", discount)
 	}
 
 	if !eq(total, 5.02) {
-		t.Errorf("total should should be 5.02 (%.2f)", d)
+		t.Errorf("total should should be 5.02 (%.2f)", total)
 	}
 }
 
-func setup() {
+func TestCheapestFromSetDiscount(t *testing.T) {
+	// Setup offers
+	shampoosOffer.AddItem(shampooMedium.ID())
+	shampoosOffer.AddItem(shampooSmall.ID())
+
+	offers2 := []core.Offer{shampoosOffer}
+
+	shampoosOffer.SetCheapestFromSetDiscount(3)
+
+	// Setup basket
+	basket3.AddItem(shampooLarge.ID(), 3)
+	basket3.AddItem(shampooMedium.ID(), 1)
+	basket3.AddItem(shampooSmall.ID(), 2)
+
+	// Setup pricer
+	pricer := core.NewPricer(catalogue, offers2)
+	pricer.SetBasket(basket3)
+
+	// Verify
+	subtotal, discount, total, err := pricer.Result()
+	if err != nil {
+		t.Errorf("cannot calculate result (%e)", err)
+	}
+
+	if !eq(subtotal, 17.0) {
+		t.Errorf("subtotal should be 17.0 (%.2f)", subtotal)
+	}
+
+	if !eq(discount, 5.5) {
+		t.Errorf("discount should be 5.5 (%.2f)", discount)
+	}
+
+	if !eq(total, 11.5) {
+		t.Errorf("total should should be 11.5 (%.2f)", total)
+	}
 }
 
 // Helpers
