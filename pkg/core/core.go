@@ -165,7 +165,6 @@ func (p *Pricer) collectOffers() error {
 					p.singles = append(p.singles, stu)
 
 				case Discounts.CheapestFromSet:
-
 					existent := false
 					for _, m := range p.multis {
 						if m.offer.ID() == offer.ID() {

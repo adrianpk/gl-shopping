@@ -173,9 +173,9 @@ func (o *Offer) SetPercentageDiscount(percentage float64) {
 	o.discountType = core.Discounts.Percentage
 }
 
-func (o *Offer) SetCheapestFromSetDiscount(RequiredQty int64) {
+func (o *Offer) SetCheapestFromSetDiscount(requiredQty int64) {
 	o.cheapestFromSetDiscount = core.CheapestFromSetDiscount{
-		RequiredQty: RequiredQty,
+		RequiredQty: requiredQty,
 	}
 
 	o.discountType = core.Discounts.CheapestFromSet
